@@ -43,10 +43,10 @@ st.write("---")
 # ================= LOAD MODEL =================
 @st.cache_resource
 def load_model():
-    model_path = "xlm_roberta_urdu_ner"  # 👈 your trained model folder
+    model_path =  "xlm_roberta_urdu_ner"  # 👈 your trained model folder
 
-    tokenizer = AutoTokenizer.from_pretrained(model_path)
-    model = AutoModelForTokenClassification.from_pretrained(model_path)
+    tokenizer = AutoTokenizer.from_pretrained( "xlm_roberta_urdu_ner")
+    model = AutoModelForTokenClassification.from_pretrained( "xlm_roberta_urdu_ner")
 
     return pipeline(
         "ner",
