@@ -1,151 +1,230 @@
+```python
 import streamlit as st
 import pandas as pd
-from transformers import AutoTokenizer, AutoModelForTokenClassification, pipeline
+from transformers import (
+    AutoTokenizer,
+    AutoModelForTokenClassification,
+    pipeline
+)
 
-# ================= PAGE CONFIG =================
+# ==================================================
+# PAGE CONFIG
+# ==================================================
 st.set_page_config(
     page_title="Urdu NER AI System",
     page_icon="🧠",
     layout="wide"
 )
 
-# ================= UI DESIGN =================
+# ==================================================
+# CUSTOM CSS
+# ==================================================
 st.markdown("""
 <style>
+.main {
+    background-color: #f5f7fa;
+}
 .title {
-    font-size: 42px;
-    text-align: center;
-    color: #1f4e79;
-    font-weight: bold;
+    text-align:center;
+    color:#1565C0;
+    font-size:40px;
+    font-weight:bold;
 }
-
 .subtitle {
-    text-align: center;
-    color: #555;
-    font-size: 18px;
-}
-
-.card {
-    background: #ffffff;
-    padding: 15px;
-    border-radius: 12px;
-    box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+    text-align:center;
+    color:#555;
+    font-size:18px;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# ================= HEADER =================
-st.markdown('<div class="title">🧠 Urdu Named Entity Recognition System</div>', unsafe_allow_html=True)
-st.markdown('<div class="subtitle">XLM-RoBERTa Based AI Model (6 Entity Types)</div>', unsafe_allow_html=True)
+# ==================================================
+# TITLE
+# ==================================================
+st.markdown('<p class="title">🧠 Urdu Named Entity Recognition System</p>',
+            unsafe_allow_html=True)
 
-st.write("---")
+st.markdown(
+    '<p class="subtitle">XLM-RoBERTa Fine-Tuned Urdu NER Model</p>',
+    unsafe_allow_html=True
+)
 
-# ================= LOAD MODEL =================
+st.markdown("---")
+
+# ==================================================
+# MODEL PATH
+# REPLACE THIS WITH YOUR HF MODEL
+# ==================================================
+MODEL_PATH = "YOUR_USERNAME/YOUR_MODEL_NAME"
+
+# Example:
+# MODEL_PATH = "kiran-razaq123/urdu-ner-xlm-roberta"
+
+# ==================================================
+# LOAD MODEL
+# ==================================================
 @st.cache_resource
 def load_model():
-    model_path =  "xlm_roberta_urdu_ner"  # 👈 your trained model folder
 
-    tokenizer = AutoTokenizer.from_pretrained( "xlm_roberta_urdu_ner")
-    model = AutoModelForTokenClassification.from_pretrained( "xlm_roberta_urdu_ner")
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
 
-    return pipeline(
+    model = AutoModelForTokenClassification.from_pretrained(
+        MODEL_PATH
+    )
+
+    ner_pipeline = pipeline(
         "ner",
         model=model,
         tokenizer=tokenizer,
         aggregation_strategy="simple"
     )
 
+    return ner_pipeline
+
 ner = load_model()
 
-# ================= LABEL MAP (6 LABELS) =================
-label_map = {
+# ==================================================
+# LABEL MAPPING
+# ==================================================
+LABEL_MAP = {
     "PER": "👤 Person",
     "LOC": "📍 Location",
     "ORG": "🏢 Organization",
     "DATE": "📅 Date",
     "TIME": "⏰ Time",
-    "MISC": "🧩 Misc"
+    "MISC": "🔹 Miscellaneous"
 }
 
-# ================= EXAMPLES =================
+# ==================================================
+# SIDEBAR
+# ==================================================
+st.sidebar.title("📊 Model Information")
+
+st.sidebar.success("Model: XLM-RoBERTa")
+
+st.sidebar.info("""
+Supported Labels:
+
+👤 Person
+
+📍 Location
+
+🏢 Organization
+
+📅 Date
+
+⏰ Time
+
+🔹 Miscellaneous
+""")
+
+# ==================================================
+# EXAMPLES
+# ==================================================
 st.subheader("📌 Example Sentences")
 
 col1, col2, col3 = st.columns(3)
 
-col1.info("علی کراچی گیا۔")
-col2.info("گوگل ایک بڑی کمپنی ہے۔")
-col3.info("23 اپریل کو 3 بجے اجلاس ہوا۔")
+with col1:
+    st.success("علی کراچی گیا")
 
-# ================= INPUT =================
-text = st.text_area("✍️ Enter Urdu or English Text", height=150)
+with col2:
+    st.success("گوگل ایک بڑی کمپنی ہے")
 
-# ================= PREDICTION =================
-def predict(text):
+with col3:
+    st.success("23 اپریل کو اجلاس ہوا")
 
-    output = ner(text)
+# ==================================================
+# TEXT INPUT
+# ==================================================
+text = st.text_area(
+    "✍️ Enter Urdu or English Text",
+    height=180,
+    placeholder="مثال: علی کراچی میں گوگل کمپنی گیا"
+)
 
-    results = []
-
-    for item in output:
-
-        label = item["entity_group"].replace("B-", "").replace("I-", "")
-
-        results.append({
-            "Word": item["word"],
-            "Label": label_map.get(label, label),
-            "Confidence": round(item["score"], 3)
-        })
-
-    return results
-
-# ================= ANALYZE BUTTON =================
+# ==================================================
+# ANALYZE BUTTON
+# ==================================================
 if st.button("🚀 Analyze Text"):
 
     if text.strip():
 
-        with st.spinner("Analyzing text..."):
+        with st.spinner("Analyzing..."):
 
-            results = predict(text)
+            results = ner(text)
 
-        st.success("Analysis Completed ✅")
+        st.success("Analysis Completed Successfully ✅")
 
-        df = pd.DataFrame(results)
+        if len(results) == 0:
 
-        # ================= TABLE =================
-        st.subheader("🔎 Extracted Entities")
-        st.dataframe(df, use_container_width=True)
+            st.warning("No entities found.")
 
-        # ================= CHART =================
-        st.subheader("📊 Entity Distribution")
-        st.bar_chart(df["Label"].value_counts())
+        else:
 
-        # ================= SUMMARY =================
-        st.subheader("📌 Summary")
+            entity_data = []
 
-        st.info(f"""
-        Total Entities Found: {len(df)}
-        Model: XLM-RoBERTa
-        Labels: 6 (PER, LOC, ORG, DATE, TIME, MISC)
-        """)
+            for item in results:
+
+                label = item["entity_group"]
+
+                label = label.replace("B-", "")
+                label = label.replace("I-", "")
+
+                entity_data.append({
+                    "Entity": item["word"],
+                    "Label": LABEL_MAP.get(label, label),
+                    "Confidence": round(item["score"], 4)
+                })
+
+            df = pd.DataFrame(entity_data)
+
+            st.subheader("🔍 Extracted Entities")
+
+            st.dataframe(
+                df,
+                use_container_width=True
+            )
+
+            st.subheader("📈 Label Distribution")
+
+            st.bar_chart(
+                df["Label"].value_counts()
+            )
+
+            avg_conf = df["Confidence"].mean()
+
+            st.subheader("📊 Summary")
+
+            c1, c2, c3 = st.columns(3)
+
+            c1.metric(
+                "Entities",
+                len(df)
+            )
+
+            c2.metric(
+                "Avg Confidence",
+                f"{avg_conf:.2f}"
+            )
+
+            c3.metric(
+                "Model",
+                "XLM-R"
+            )
 
     else:
-        st.error("⚠️ Please enter some text first")
 
-# ================= SIDEBAR =================
-st.sidebar.title("📊 Model Info")
+        st.error("⚠️ Please enter text first.")
 
-st.sidebar.success("XLM-RoBERTa Urdu NER")
+# ==================================================
+# FOOTER
+# ==================================================
+st.markdown("---")
 
-st.sidebar.write("""
-### Supported Labels (6)
-👤 Person  
-📍 Location  
-🏢 Organization  
-📅 Date  
-⏰ Time  
-🧩 Misc  
-""")
+st.caption(
+    "🧠 Urdu Named Entity Recognition System | "
+    "Powered by XLM-RoBERTa"
+)
+```
 
-# ================= FOOTER =================
-st.write("---")
-st.caption("🧠 Urdu NER System | XLM-RoBERTa | FYP Project")
