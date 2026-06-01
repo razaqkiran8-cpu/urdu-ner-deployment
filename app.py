@@ -226,5 +226,5 @@ st.caption(
     "🧠 Urdu Named Entity Recognition System | "
     "Powered by XLM-RoBERTa"
 )
-```
+
 
