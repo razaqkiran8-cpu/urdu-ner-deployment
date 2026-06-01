@@ -55,7 +55,7 @@ st.markdown("---")
 # MODEL PATH
 # REPLACE THIS WITH YOUR HF MODEL
 # ==================================================
-MODEL_PATH = "YOUR_USERNAME/YOUR_MODEL_NAME"
+MODEL_PATH = "kiran-razaq123/urdu-ner-xlm-roberta"
 
 # Example:
 # MODEL_PATH = "kiran-razaq123/urdu-ner-xlm-roberta"
