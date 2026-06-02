@@ -1,7 +1,5 @@
 streamlit
 transformers
 torch
-pandas
 sentencepiece
-safetensors
-accelerate
+huggingface_hub
